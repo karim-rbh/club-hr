@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>النادي العلمي — نظام HR</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* ══════════════════════════════════════
+   TOKENS & RESET
+══════════════════════════════════════ */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  /* backgrounds */
+  --bg:#050810;--s1:#0b1020;--s2:#0f1628;--s3:#141d35;
+  /* borders */
+  --b1:#1a2540;--b2:#243050;
+  /* brand */
+  --accent:#2563eb;--accent2:#7c3aed;--accent3:#0ea5e9;
+  --gold:#f59e0b;--green:#10b981;--red:#ef4444;--rose:#f43f5e;
+  /* text */
+  --txt:#e2e8f0;--txt2:#94a3b8;--txt3:#475569;
+  /* glows */
+  --glow-b:rgba(37,99,235,.18);--glow-p:rgba(124,58,237,.12);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden}
+
+/* ══ AMBIENT LAYERS ══ */
+.ambient{position:fixed;inset:0;pointer-events:none;z-index:0}
+.ambient::before{content:'';position:absolute;
+  width:800px;height:800px;border-radius:50%;
+  background:radial-gradient(circle,rgba(37,99,235,.07) 0%,transparent 70%);
+  top:-200px;right:-200px}
+.ambient::after{content:'';position:absolute;
+  width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(124,58,237,.05) 0%,transparent 70%);
+  bottom:-100px;left:-100px}
+.grid-bg{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(37,99,235,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(37,99,235,.025) 1px,transparent 1px);
+  background-size:52px 52px}
+
+/* ══ PAGES ══ */
+.page{display:none;position:relative;z-index:1;min-height:100vh}
+.page.active{display:block}
+
+/* ══════════════════════════════════════
+   LOGIN SCREEN
+══════════════════════════════════════ */
+#loginPage{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.login-card{background:var(--s1);border:1px solid var(--b1);border-radius:24px;
+  padding:48px 40px;max-width:400px;width:100%;text-align:center;
+  box-shadow:0 0 60px rgba(37,99,235,.08),0 24px 64px rgba(0,0,0,.4)}
+.login-logo{width:72px;height:72px;border-radius:20px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:30px;margin:0 auto 24px;
+  box-shadow:0 0 30px rgba(37,99,235,.3)}
+.login-card h2{font-size:22px;font-weight:900;margin-bottom:6px}
+.login-card p{font-size:13px;color:var(--txt2);margin-bottom:32px}
+.login-field{text-align:right;margin-bottom:16px}
+.login-field label{display:block;font-size:11px;font-weight:700;
+  color:var(--txt3);letter-spacing:.6px;text-transform:uppercase;margin-bottom:6px}
+.login-field input{width:100%;background:var(--bg);border:1.5px solid var(--b1);
+  border-radius:12px;padding:12px 14px;font-family:'Cairo',sans-serif;
+  font-size:14px;color:var(--txt);outline:none;direction:ltr;text-align:left;
+  transition:border-color .2s,box-shadow .2s}
+.login-field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow-b)}
+.login-btn{width:100%;padding:14px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;border:none;border-radius:12px;font-family:'Cairo',sans-serif;
+  font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;
+  transition:all .3s;box-shadow:0 8px 24px rgba(37,99,235,.3)}
+.login-btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(37,99,235,.45)}
+.login-err{font-size:12px;color:var(--red);margin-top:10px;display:none}
+.login-err.show{display:block}
+.back-link{font-size:12px;color:var(--txt3);cursor:pointer;margin-top:20px;
+  display:inline-block;transition:color .2s}
+.back-link:hover{color:var(--accent)}
+
+/* ══════════════════════════════════════
+   TOP NAV
+══════════════════════════════════════ */
+.nav{position:sticky;top:0;z-index:100;background:rgba(5,8,16,.85);
+  backdrop-filter:blur(20px);border-bottom:1px solid var(--b1);
+  padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{display:flex;align-items:center;gap:10px}
+.nav-logo{width:34px;height:34px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;font-size:15px}
+.nav-title{font-size:14px;font-weight:700}
+.nav-sub{font-size:11px;color:var(--txt3)}
+.nav-tabs{display:flex;gap:4px}
+.nav-tab{padding:7px 18px;border-radius:8px;font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .2s;border:none;background:transparent;
+  color:var(--txt3);font-family:'Cairo',sans-serif}
+.nav-tab:hover{color:var(--txt);background:var(--s2)}
+.nav-tab.active{background:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(37,99,235,.3)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.count-badge{background:var(--s2);border:1px solid var(--b1);border-radius:100px;
+  padding:4px 12px;font-size:12px;color:var(--txt2)}
+.count-badge span{color:var(--green);font-weight:700}
+.logout-btn{padding:6px 14px;background:transparent;border:1px solid var(--b1);
+  border-radius:8px;color:var(--txt3);font-family:'Cairo',sans-serif;font-size:12px;
+  cursor:pointer;transition:all .2s}
+.logout-btn:hover{border-color:var(--red);color:var(--red)}
+
+/* ══════════════════════════════════════
+   SURVEY PAGE
+══════════════════════════════════════ */
+.survey-wrap{max-width:660px;margin:0 auto;padding:0 16px 100px}
+.hero{text-align:center;padding:48px 0 28px}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;
+  background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.2);
+  color:#60a5fa;font-size:11px;font-weight:700;padding:6px 18px;
+  border-radius:100px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px}
+.hero-badge i{width:7px;height:7px;border-radius:50%;background:var(--green);
+  animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1;box-shadow:0 0 6px var(--green)}50%{opacity:.3}}
+.hero h1{font-size:clamp(22px,5vw,36px);font-weight:900;line-height:1.2;margin-bottom:8px;
+  background:linear-gradient(135deg,#e2e8f0 0%,#93c5fd 50%,#c4b5fd 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:13px;color:var(--txt2);max-width:340px;margin:0 auto 20px;line-height:1.9}
+.pg-wrap{background:var(--s1);border:1px solid var(--b1);border-radius:100px;padding:3px}
+.pg-bar{height:7px;border-radius:100px;width:0%;transition:width .4s ease;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  box-shadow:0 0 12px rgba(37,99,235,.4)}
+.pg-lbl{font-size:11px;color:var(--txt3);text-align:center;margin-top:5px;margin-bottom:24px}
+.pg-lbl span{color:var(--accent);font-weight:700}
+
+/* CARD */
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:18px;
+  padding:22px;margin-bottom:12px;
+  opacity:0;transform:translateY(16px);animation:fadeUp .4s ease forwards}
+@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+.card:nth-child(1){animation-delay:.05s}.card:nth-child(2){animation-delay:.1s}
+.card:nth-child(3){animation-delay:.15s}.card:nth-child(4){animation-delay:.2s}
+.card:nth-child(5){animation-delay:.25s}.card:nth-child(6){animation-delay:.3s}
+.card-head{display:flex;align-items:center;gap:12px;margin-bottom:18px;
+  padding-bottom:13px;border-bottom:1px solid var(--b1)}
+.card-ico{width:38px;height:38px;border-radius:11px;
+  background:rgba(37,99,235,.1);border:1px solid rgba(37,99,235,.2);
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.card-title{font-size:14px;font-weight:700}
+.card-sub{font-size:11px;color:var(--txt3);margin-top:2px}
+
+/* FIELDS */
+.f{margin-bottom:15px}.f:last-child{margin-bottom:0}
+.f>label{display:block;font-size:11px;font-weight:700;color:var(--txt3);
+  margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase}
+.req{color:var(--red);margin-right:2px}
+input[type=text],input[type=tel],select,textarea{
+  width:100%;background:var(--bg);border:1.5px solid var(--b1);border-radius:10px;
+  padding:10px 13px;font-family:'Cairo',sans-serif;font-size:13px;color:var(--txt);
+  outline:none;transition:border-color .2s,box-shadow .2s;direction:rtl}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--accent);box-shadow:0 0 0 3px var(--glow-b)}
+input::placeholder,textarea::placeholder{color:var(--txt3)}
+textarea{resize:vertical;min-height:80px}
+.f-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* CHIPS */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.xi{display:none}
+.xi+label{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;
+  border:1.5px solid var(--b1);border-radius:100px;font-size:12px;font-weight:600;
+  color:var(--txt3);cursor:pointer;transition:all .2s;background:var(--bg)}
+.xi+label:hover{border-color:var(--accent);color:#93c5fd}
+.xi:checked+label{background:rgba(37,99,235,.1);border-color:var(--accent);
+  color:#93c5fd;box-shadow:0 0 10px var(--glow-b)}
+
+/* DAYS */
+.dg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.db{background:var(--bg);border:1.5px solid var(--b1);border-radius:12px;overflow:hidden;transition:border-color .2s}
+.db:has(.dm:checked){border-color:var(--accent)}
+.dt{padding:8px 10px;display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--b1);cursor:pointer}
+.dm{accent-color:var(--accent);width:13px;height:13px;cursor:pointer}
+.dt label{font-size:12px;font-weight:700;cursor:pointer}
+.ds{padding:6px 10px 8px;display:flex;flex-direction:column;gap:3px}
+.sl{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt3);
+  cursor:pointer;padding:3px 4px;border-radius:5px;transition:background .15s}
+.sl:hover{background:rgba(37,99,235,.06);color:var(--txt)}
+.sl input{accent-color:var(--green);width:11px;height:11px}
+.dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.dot-m{background:#f59e0b}.dot-a{background:#3b82f6}.dot-e{background:#8b5cf6}
+
+/* BUSY */
+.busy-row{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.bi{display:none}
+.bi+label{display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:10px 4px;background:var(--bg);border:1.5px solid var(--b1);
+  border-radius:12px;cursor:pointer;font-size:10px;font-weight:600;
+  color:var(--txt3);text-align:center;transition:all .2s}
+.bi+label .em{font-size:20px}
+.bi:checked+label{border-color:var(--gold);background:rgba(245,158,11,.07);
+  color:var(--gold);box-shadow:0 0 12px rgba(245,158,11,.12)}
+
+/* STARS */
+.sg{margin-bottom:16px}.sg:last-child{margin-bottom:0}
+.sg .slbl{display:block;font-size:11px;font-weight:700;color:var(--txt3);
+  margin-bottom:7px;letter-spacing:.5px;text-transform:uppercase}
+.stars{display:flex;flex-direction:row-reverse;gap:3px;justify-content:flex-end}
+.stars input{display:none}
+.stars label{font-size:30px;cursor:pointer;color:var(--b2);
+  transition:color .15s,transform .15s;line-height:1;user-select:none}
+.stars label:hover,.stars label:hover~label,.stars input:checked~label{
+  color:var(--gold);text-shadow:0 0 8px rgba(245,158,11,.4)}
+.stars label:hover{transform:scale(1.18)}
+.scap{font-size:11px;color:var(--txt3);margin-top:4px;min-height:16px}
+.scap.lit{color:var(--gold)}
+
+/* SUBMIT */
+.sub-btn{width:100%;padding:15px;
+  background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);
+  color:#fff;border:none;border-radius:14px;font-family:'Cairo',sans-serif;
+  font-size:15px;font-weight:700;cursor:pointer;transition:all .3s;
+  box-shadow:0 8px 24px rgba(37,99,235,.3);display:flex;
+  align-items:center;justify-content:center;gap:10px;margin-top:6px}
+.sub-btn:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(37,99,235,.4)}
+.sub-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.spin{display:inline-block;width:16px;height:16px;
+  border:2px solid rgba(255,255,255,.3);border-top-color:#fff;
+  border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* SUCCESS */
+.succ{display:none;position:fixed;inset:0;background:rgba(5,8,16,.97);
+  backdrop-filter:blur(20px);z-index:200;align-items:center;
+  justify-content:center;flex-direction:column;padding:20px;text-align:center}
+.succ.show{display:flex}
+.s-ring{width:80px;height:80px;border-radius:50%;
+  background:rgba(16,185,129,.1);border:2px solid rgba(16,185,129,.4);
+  display:flex;align-items:center;justify-content:center;font-size:34px;
+  margin-bottom:16px;animation:pop .5s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.succ h2{font-size:22px;font-weight:900;margin-bottom:6px}
+.succ>p{color:var(--txt2);font-size:13px;line-height:1.9;margin-bottom:16px}
+.succ-btns{display:flex;gap:8px}
+.sb{padding:10px 22px;border-radius:10px;font-family:'Cairo',sans-serif;
+  font-size:13px;font-weight:700;cursor:pointer;border:none;transition:opacity .2s}
+.sb:hover{opacity:.82}
+.sb-green{background:var(--green);color:#fff}
+.sb-blue{background:var(--accent);color:#fff}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(60px);
+  background:var(--s2);border:1px solid var(--b2);border-radius:10px;
+  padding:10px 20px;font-size:13px;font-weight:600;
+  box-shadow:0 8px 24px rgba(0,0,0,.4);transition:transform .3s;z-index:300;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ══════════════════════════════════════
+   ADMIN DASHBOARD
+══════════════════════════════════════ */
+.admin-wrap{padding:24px;max-width:1200px;margin:0 auto}
+
+/* STAT CARDS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--s1);border:1px solid var(--b1);border-radius:16px;
+  padding:20px;position:relative;overflow:hidden;transition:border-color .2s}
+.stat-card:hover{border-color:var(--b2)}
+.stat-card::after{content:'';position:absolute;top:0;right:0;width:80px;height:80px;
+  border-radius:50%;transform:translate(30px,-30px)}
+.sc-blue::after{background:radial-gradient(circle,rgba(37,99,235,.15),transparent 70%)}
+.sc-green::after{background:radial-gradient(circle,rgba(16,185,129,.15),transparent 70%)}
+.sc-gold::after{background:radial-gradient(circle,rgba(245,158,11,.15),transparent 70%)}
+.sc-purple::after{background:radial-gradient(circle,rgba(124,58,237,.15),transparent 70%)}
+.stat-icon{font-size:22px;margin-bottom:10px}
+.stat-val{font-size:32px;font-weight:900;line-height:1;margin-bottom:4px;
+  font-family:'JetBrains Mono',monospace}
+.sc-blue .stat-val{color:var(--accent)}
+.sc-green .stat-val{color:var(--green)}
+.sc-gold .stat-val{color:var(--gold)}
+.sc-purple .stat-val{color:#a78bfa}
+.stat-lbl{font-size:12px;color:var(--txt3);font-weight:600}
+
+/* TOOLBAR */
+.toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.search-box{flex:1;min-width:200px;position:relative}
+.search-box input{width:100%;background:var(--s1);border:1.5px solid var(--b1);
+  border-radius:10px;padding:9px 14px 9px 36px;font-family:'Cairo',sans-serif;
+  font-size:13px;color:var(--txt);outline:none;transition:border-color .2s;direction:rtl}
+.search-box input:focus{border-color:var(--accent)}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  color:var(--txt3);font-size:14px;pointer-events:none}
+.filter-sel{background:var(--s1);border:1.5px solid var(--b1);border-radius:10px;
+  padding:9px 13px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--txt2);
+  outline:none;cursor:pointer;transition:border-color .2s}
+.filter-sel:focus{border-color:var(--accent)}
+.tool-btn{padding:9px 16px;border-radius:10px;font-family:'Cairo',sans-serif;
+  font-size:12px;font-weight:700;cursor:pointer;border:none;transition:all .2s;
+  display:flex;align-items:center;gap:6px}
+.tb-excel{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);color:var(--green)}
+.tb-excel:hover{background:rgba(16,185,129,.2)}
+.tb-clear{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:var(--red)}
+.tb-clear:hover{background:rgba(239,68,68,.15)}
+
+/* CHARTS */
+.charts-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px}
+.chart-card{background:var(--s1);border:1px solid var(--b1);border-radius:16px;padding:18px}
+.chart-title{font-size:13px;font-weight:700;margin-bottom:14px;color:var(--txt2);
+  display:flex;align-items:center;gap:8px}
+.chart-title::before{content:'';width:3px;height:14px;border-radius:2px;
+  background:linear-gradient(var(--accent),var(--accent2))}
+
+/* Bar chart */
+.bar-chart{display:flex;flex-direction:column;gap:8px}
+.bar-item{display:flex;align-items:center;gap:8px}
+.bar-label{font-size:11px;color:var(--txt3);width:30px;text-align:center;flex-shrink:0;font-weight:700}
+.bar-track{flex:1;height:8px;background:var(--s2);border-radius:100px;overflow:hidden}
+.bar-fill{height:100%;border-radius:100px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.bar-count{font-size:11px;color:var(--txt3);width:20px;text-align:center;font-family:'JetBrains Mono',monospace}
+
+/* Donut chart */
+.donut-wrap{display:flex;align-items:center;gap:14px}
+.donut-svg{flex-shrink:0}
+.donut-legend{flex:1;display:flex;flex-direction:column;gap:5px}
+.dl-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--txt3)}
+.dl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dl-val{margin-right:auto;font-weight:700;color:var(--txt);font-family:'JetBrains Mono',monospace;font-size:10px}
+
+/* Stars display */
+.stars-summary{display:flex;flex-direction:column;gap:8px}
+.ss-item{display:flex;flex-direction:column;gap:3px}
+.ss-label{font-size:10px;color:var(--txt3)}
+.ss-row{display:flex;align-items:center;gap:6px}
+.ss-stars{color:var(--gold);font-size:13px}
+.ss-val{font-size:12px;font-weight:700;color:var(--txt);font-family:'JetBrains Mono',monospace}
+
+/* TABLE */
+.table-card{background:var(--s1);border:1px solid var(--b1);border-radius:16px;overflow:hidden}
+.table-header{padding:16px 20px;border-bottom:1px solid var(--b1);
+  display:flex;align-items:center;justify-content:space-between}
+.table-header h3{font-size:14px;font-weight:700}
+.total-tag{font-size:12px;color:var(--txt3);background:var(--s2);
+  border:1px solid var(--b1);border-radius:100px;padding:3px 12px}
+.total-tag span{color:var(--accent);font-weight:700}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead tr{background:var(--s2)}
+th{padding:10px 14px;text-align:right;font-weight:700;color:var(--txt3);
+  font-size:11px;letter-spacing:.5px;text-transform:uppercase;
+  border-bottom:1px solid var(--b1);white-space:nowrap;cursor:pointer;user-select:none}
+th:hover{color:var(--txt)}
+td{padding:10px 14px;border-bottom:1px solid rgba(26,37,64,.5);
+  color:var(--txt2);white-space:nowrap;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(37,99,235,.04);color:var(--txt)}
+.td-name{font-weight:700;color:var(--txt)}
+.td-level{background:rgba(37,99,235,.1);border:1px solid rgba(37,99,235,.2);
+  color:#93c5fd;border-radius:100px;padding:2px 10px;font-size:11px;font-weight:700;display:inline-block}
+.td-stars{color:var(--gold)}
+.td-del{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.15);
+  color:var(--red);border-radius:7px;padding:4px 10px;cursor:pointer;
+  font-family:'Cairo',sans-serif;font-size:11px;transition:all .2s}
+.td-del:hover{background:rgba(239,68,68,.2)}
+.empty-state{text-align:center;padding:60px 20px}
+.empty-state .es-ico{font-size:48px;margin-bottom:12px;opacity:.4}
+.empty-state p{color:var(--txt3);font-size:13px}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(5,8,16,.85);
+  backdrop-filter:blur(10px);z-index:400;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.show{display:flex}
+.modal{background:var(--s2);border:1px solid var(--b2);border-radius:20px;
+  padding:24px;max-width:500px;width:100%;max-height:80vh;overflow-y:auto}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--b1)}
+.detail-row{display:flex;gap:10px;margin-bottom:10px;font-size:13px}
+.dr-key{color:var(--txt3);min-width:120px;flex-shrink:0;font-size:12px;font-weight:600}
+.dr-val{color:var(--txt);word-break:break-word}
+.modal-close{width:100%;margin-top:16px;padding:10px;background:var(--s1);
+  border:1px solid var(--b1);border-radius:10px;color:var(--txt2);
+  font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
+
+/* CONFIRM MODAL */
+.confirm-modal{background:var(--s2);border:1px solid rgba(239,68,68,.3);
+  border-radius:20px;padding:28px;max-width:360px;width:100%;text-align:center}
+.confirm-modal h3{font-size:16px;font-weight:700;margin-bottom:8px}
+.confirm-modal p{font-size:13px;color:var(--txt3);margin-bottom:20px}
+.confirm-btns{display:flex;gap:10px}
+.cb{flex:1;padding:11px;border-radius:10px;font-family:'Cairo',sans-serif;
+  font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .2s}
+.cb-cancel{background:var(--s1);color:var(--txt2)}
+.cb-confirm{background:var(--red);color:#fff}
+
+@media(max-width:768px){
+  .stats-row{grid-template-columns:1fr 1fr}
+  .charts-row{grid-template-columns:1fr}
+  .dg{grid-template-columns:1fr 1fr}
+  .f-row{grid-template-columns:1fr}
+  .busy-row{grid-template-columns:repeat(3,1fr)}
+  .nav-tabs{display:none}
+}
+@media(max-width:500px){
+  .stats-row{grid-template-columns:1fr 1fr}
+  .admin-wrap{padding:12px}
+}
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="grid-bg"></div>
+
+<!-- ══ LOGIN ══ -->
+<div id="loginPage" class="page active">
+  <div class="login-card">
+    <div class="login-logo">🛡️</div>
+    <h2>لوحة الآدمن</h2>
+    <p>النادي العلمي الجامعي — HR System</p>
+    <div class="login-field">
+      <label>كلمة المرور</label>
+      <input type="password" id="pwInput" placeholder="أدخل كلمة المرور"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()">دخول ←</button>
+    <div class="login-err" id="loginErr">❌ كلمة المرور خاطئة</div>
+    <div class="back-link" onclick="goSurvey()">↩ العودة للاستبيان</div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══ -->
+<div id="appPage" class="page">
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-brand">
+      <div class="nav-logo">🎓</div>
+      <div><div class="nav-title">النادي العلمي</div><div class="nav-sub">HR System</div></div>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchTab('survey')">📋 الاستبيان</button>
+      <button class="nav-tab" onclick="switchTab('admin')">🛡️ الآدمن</button>
+    </div>
+    <div class="nav-right">
+      <div class="count-badge">الردود: <span id="navCount">0</span></div>
+      <button class="logout-btn" onclick="logout()">خروج</button>
+    </div>
+  </nav>
+
+  <!-- ══ SURVEY TAB ══ -->
+  <div id="surveyTab" class="survey-wrap">
+    <div class="hero">
+      <div class="hero-badge"><i></i>النادي العلمي الجامعي • HR</div>
+      <h1>استبيان أوقات الفراغ</h1>
+      <p>ردك يُحفظ تلقائياً في النظام ✦ يراه مسؤول HR مباشرة</p>
+      <div class="pg-wrap"><div class="pg-bar" id="bar"></div></div>
+      <div class="pg-lbl">اكتملت <span id="pct">0</span>% من الاستبيان</div>
+    </div>
+
+    <!-- Card 1: Personal -->
+    <div class="card">
+      <div class="card-head"><div class="card-ico">👤</div>
+        <div><div class="card-title">المعلومات الشخصية</div><div class="card-sub">بياناتك الأساسية كعضو في النادي</div></div>
+      </div>
+      <div class="f"><label><span class="req">*</span>الاسم الكامل</label>
+        <input type="text" id="f_name" placeholder="مثال: أحمد بن علي" oninput="pg()"></div>
+      <div class="f-row">
+        <div class="f"><label><span class="req">*</span>المستوى</label>
+          <select id="f_level" onchange="pg()">
+            <option value="">— اختر —</option>
+            <option>L1</option><option>L2</option><option>L3</option>
+            <option>M1</option><option>M2</option><option>دكتوراه</option>
+          </select></div>
+        <div class="f"><label>الكلية / القسم</label>
+          <select id="f_dept" onchange="pg()">
+            <option value="">— اختر —</option>
+            <option>علوم اقتصادية وتجارية وتسيير</option>
+            <option>علوم مالية ومحاسبة</option>
+            <option>علوم تجارية</option>
+            <option>علوم تسيير / إدارة أعمال</option>
+            <option>حقوق وعلوم سياسية</option>
+            <option>هندسة مدنية أو ميكانيكية</option>
+            <option>علوم وتكنولوجيا</option>
+            <option>لغات أجنبية</option>
+            <option>أخرى</option>
+          </select></div>
+      </div>
+      <div class="f"><label>التخصص الدقيق</label>
+        <input type="text" id="f_spec" placeholder="تسويق، محاسبة وجباية..." oninput="pg()"></div>
+      <div class="f"><label><span class="req">*</span>رقم الهاتف</label>
+        <input type="tel" id="f_phone" placeholder="0555 123 456" oninput="pg()" maxlength="10"></div>
+      <div class="f"><label>حساب إنستغرام</label>
+        <input type="text" id="f_insta" placeholder="@username"></div>
+    </div>
+
+    <!-- Card 2: Days -->
+    <div class="card">
+      <div class="card-head"><div class="card-ico">📅</div>
+        <div><div class="card-title">أيام وأوقات الفراغ</div><div class="card-sub">حدد الأيام والفترات المتاحة</div></div>
+      </div>
+      <div class="dg" id="dg"></div>
+      <p style="font-size:11px;color:var(--txt3);margin-top:8px;text-align:center">الجمعة عطلة • اختر فترات كل يوم</p>
+    </div>
+
+    <!-- Card 3: Workload -->
+    <div class="card">
+      <div class="card-head"><div class="card-ico">⚡</div>
+        <div><div class="card-title">مستوى الانشغال الدراسي</div><div class="card-sub">حجم العبء هذا الفصل</div></div>
+      </div>
+      <div class="busy-row">
+        <input type="radio" name="busy" id="b1" value="😴 خفيف جداً" class="bi" onchange="pg()"><label for="b1"><span class="em">😴</span>خفيف جداً</label>
+        <input type="radio" name="busy" id="b2" value="🙂 خفيف" class="bi" onchange="pg()"><label for="b2"><span class="em">🙂</span>خفيف</label>
+        <input type="radio" name="busy" id="b3" value="😐 متوسط" class="bi" onchange="pg()"><label for="b3"><span class="em">😐</span>متوسط</label>
+        <input type="radio" name="busy" id="b4" value="😓 مرهق" class="bi" onchange="pg()"><label for="b4"><span class="em">😓</span>مرهق</label>
+        <input type="radio" name="busy" id="b5" value="🤯 مكثف جداً" class="bi" onchange="pg()"><label for="b5"><span class="em">🤯</span>مكثف جداً</label>
+      </div>
+    </div>
+
+    <!-- Card 4: Meeting -->
+    <div class="card">
+      <div class="card-head"><div class="card-ico">🏛️</div>
+        <div><div class="card-title">تفضيلات الاجتماعات</div><div class="card-sub">كيف تفضل أن تُعقد الاجتماعات؟</div></div>
+      </div>
+      <div class="f"><label>طريقة الاجتماع</label>
+        <div class="chips">
+          <input type="radio" name="meet" id="m1" value="🏫 حضوري" class="xi" onchange="pg()"><label for="m1">🏫 حضوري</label>
+          <input type="radio" name="meet" id="m2" value="💻 أونلاين" class="xi" onchange="pg()"><label for="m2">💻 أونلاين</label>
+          <input type="radio" name="meet" id="m3" value="🔀 هجين" class="xi" onchange="pg()"><label for="m3">🔀 هجين</label>
+          <input type="radio" name="meet" id="m4" value="✌️ لا يهمني" class="xi" onchange="pg()"><label for="m4">✌️ لا يهمني</label>
+        </div></div>
+      <div class="f"><label>مدة الاجتماع</label>
+        <div class="chips">
+          <input type="radio" name="dur" id="d1" value="30 دقيقة" class="xi" onchange="pg()"><label for="d1">30 دق</label>
+          <input type="radio" name="dur" id="d2" value="1 ساعة" class="xi" onchange="pg()"><label for="d2">1 ساعة</label>
+          <input type="radio" name="dur" id="d3" value="1.5 ساعة" class="xi" onchange="pg()"><label for="d3">1.5 ساعة</label>
+          <input type="radio" name="dur" id="d4" value="2 ساعة" class="xi" onchange="pg()"><label for="d4">2 ساعة</label>
+        </div></div>
+      <div class="f"><label>ساعات الفراغ أسبوعياً</label>
+        <div class="chips">
+          <input type="radio" name="fh" id="fh1" value="أقل من 3 ساعات" class="xi" onchange="pg()"><label for="fh1">أقل من 3</label>
+          <input type="radio" name="fh" id="fh2" value="3–6 ساعات" class="xi" onchange="pg()"><label for="fh2">3–6 ساعات</label>
+          <input type="radio" name="fh" id="fh3" value="6–10 ساعات" class="xi" onchange="pg()"><label for="fh3">6–10 ساعات</label>
+          <input type="radio" name="fh" id="fh4" value="+10 ساعات" class="xi" onchange="pg()"><label for="fh4">+10 ساعات</label>
+        </div></div>
+    </div>
+
+    <!-- Card 5: Stars -->
+    <div class="card">
+      <div class="card-head"><div class="card-ico">⭐</div>
+        <div><div class="card-title">تقييم النادي</div><div class="card-sub">قيّم تجربتك بصدق</div></div>
+      </div>
+      <div class="sg">
+        <label class="slbl">مستوى رضاك عن تنظيم النادي</label>
+        <div class="stars">
+          <input type="radio" name="s1" id="s15" value="5" onchange="sc('c1',5)"><label for="s15">★</label>
+          <input type="radio" name="s1" id="s14" value="4" onchange="sc('c1',4)"><label for="s14">★</label>
+          <input type="radio" name="s1" id="s13" value="3" onchange="sc('c1',3)"><label for="s13">★</label>
+          <input type="radio" name="s1" id="s12" value="2" onchange="sc('c1',2)"><label for="s12">★</label>
+          <input type="radio" name="s1" id="s11" value="1" onchange="sc('c1',1)"><label for="s11">★</label>
+        </div>
+        <div class="scap" id="c1">انقر لتقييم</div>
+      </div>
+      <div class="sg">
+        <label class="slbl">مستوى رضاك عن الأنشطة</label>
+        <div class="stars">
+          <input type="radio" name="s2" id="s25" value="5" onchange="sc('c2',5)"><label for="s25">★</label>
+          <input type="radio" name="s2" id="s24" value="4" onchange="sc('c2',4)"><label for="s24">★</label>
+          <input type="radio" name="s2" id="s23" value="3" onchange="sc('c2',3)"><label for="s23">★</label>
+          <input type="radio" name="s2" id="s22" value="2" onchange="sc('c2',2)"><label for="s22">★</label>
+          <input type="radio" name="s2" id="s21" value="1" onchange="sc('c2',1)"><label for="s21">★</label>
+        </div>
+        <div class="scap" id="c2">انقر لتقييم</div>
+      </div>
+      <div class="sg">
+        <label class="slbl">هل توصي زملاءك بالانضمام؟</label>
+        <div class="stars">
+          <input type="radio" name="s3" id="s35" value="5" onchange="sc('c3',5)"><label for="s35">★</label>
+          <input type="radio" name="s3" id="s34" value="4" onchange="sc('c3',4)"><label for="s34">★</label>
+          <input type="radio" name="s3" id="s33" value="3" onchange="sc('c3',3)"><label for="s33">★</label>
+          <input type="radio" name="s3" id="s32" value="2" onchange="sc('c3',2)"><label for="s32">★</label>
+          <input type="radio" name="s3" id="s31" value="1" onchange="sc('c3',1)"><label for="s31">★</label>
+        </div>
+        <div class="scap" id="c3">انقر لتقييم</div>
+      </div>
+    </div>
+
+    <!-- Card 6: Notes -->
+    <div class="card">
+      <div class="card-head"><div class="card-ico">💬</div>
+        <div><div class="card-title">ملاحظات إضافية</div><div class="card-sub">أي معلومات تريد مشاركتها</div></div>
+      </div>
+      <div class="f"><label>التزامات خارجية</label>
+        <textarea id="f_notes" placeholder="عمل، تكوين، رياضة..."></textarea></div>
+      <div class="f"><label>اقتراحات لتحسين النادي</label>
+        <textarea id="f_sugg" placeholder="أفكارك مهمة جداً 🙏"></textarea></div>
+    </div>
+
+    <!-- Card 7: HR Interview + Fields of Interest -->
+    <div class="card">
+      <div class="card-head"><div class="card-ico">🤝</div>
+        <div><div class="card-title">معلومات إضافية</div><div class="card-sub">أسئلة من فريق HR</div></div>
+      </div>
+      <div class="f">
+        <label><span class="req">*</span>هل أجريت مقابلة مع HR؟</label>
+        <div class="chips">
+          <input type="radio" name="hrInterview" id="hi1" value="نعم ✅" class="xi" onchange="pg()"><label for="hi1">نعم ✅</label>
+          <input type="radio" name="hrInterview" id="hi2" value="لا ❌" class="xi" onchange="pg()"><label for="hi2">لا ❌</label>
+          <input type="radio" name="hrInterview" id="hi3" value="مجدولة 📅" class="xi" onchange="pg()"><label for="hi3">مجدولة 📅</label>
+        </div>
+      </div>
+      <div class="f" style="margin-top:18px">
+        <label>المجالات التي تهتم بها <span style="color:var(--txt3);font-weight:400;text-transform:none;letter-spacing:0">(اختر ما تريد)</span></label>
+        <div class="chips" style="row-gap:8px">
+          <input type="checkbox" name="field" id="fd1" value="📊 التسويق والإعلام" class="xi"><label for="fd1">📊 التسويق والإعلام</label>
+          <input type="checkbox" name="field" id="fd2" value="💰 المالية والمحاسبة" class="xi"><label for="fd2">💰 المالية والمحاسبة</label>
+          <input type="checkbox" name="field" id="fd3" value="🖥️ التكنولوجيا والبرمجة" class="xi"><label for="fd3">🖥️ التكنولوجيا والبرمجة</label>
+          <input type="checkbox" name="field" id="fd4" value="🎨 التصميم والإبداع" class="xi"><label for="fd4">🎨 التصميم والإبداع</label>
+          <input type="checkbox" name="field" id="fd5" value="📣 التنظيم والفعاليات" class="xi"><label for="fd5">📣 التنظيم والفعاليات</label>
+          <input type="checkbox" name="field" id="fd6" value="🤝 العلاقات والتواصل" class="xi"><label for="fd6">🤝 العلاقات والتواصل</label>
+          <input type="checkbox" name="field" id="fd7" value="📝 الكتابة والمحتوى" class="xi"><label for="fd7">📝 الكتابة والمحتوى</label>
+          <input type="checkbox" name="field" id="fd8" value="🔬 البحث العلمي" class="xi"><label for="fd8">🔬 البحث العلمي</label>
+          <input type="checkbox" name="field" id="fd9" value="🌍 العلاقات الدولية" class="xi"><label for="fd9">🌍 العلاقات الدولية</label>
+          <input type="checkbox" name="field" id="fd10" value="📦 الإدارة واللوجستيك" class="xi"><label for="fd10">📦 الإدارة واللوجستيك</label>
+        </div>
+      </div>
+      <div class="f">
+        <label>مجال آخر؟</label>
+        <input type="text" id="f_field_other" placeholder="أذكره هنا...">
+      </div>
+    </div>
+
+    <button type="button" class="sub-btn" id="subBtn" onclick="doSubmit()">
+      <span>✅</span> إرسال وحفظ الرد
+    </button>
+  </div>
+
+  <!-- ══ ADMIN TAB ══ -->
+  <div id="adminTab" class="admin-wrap" style="display:none">
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card sc-blue">
+        <div class="stat-icon">📋</div>
+        <div class="stat-val" id="st-total">0</div>
+        <div class="stat-lbl">إجمالي الردود</div>
+      </div>
+      <div class="stat-card sc-green">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-val" id="st-avg">—</div>
+        <div class="stat-lbl">متوسط التقييم</div>
+      </div>
+      <div class="stat-card sc-gold">
+        <div class="stat-icon">📅</div>
+        <div class="stat-val" id="st-day">—</div>
+        <div class="stat-lbl">أكثر يوم متاح</div>
+      </div>
+      <div class="stat-card sc-purple">
+        <div class="stat-icon">🎓</div>
+        <div class="stat-val" id="st-level">—</div>
+        <div class="stat-lbl">أكثر مستوى</div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-row">
+      <!-- Levels bar -->
+      <div class="chart-card">
+        <div class="chart-title">توزيع المستويات</div>
+        <div class="bar-chart" id="levelChart"></div>
+      </div>
+      <!-- Busy donut -->
+      <div class="chart-card">
+        <div class="chart-title">مستوى الانشغال</div>
+        <div class="donut-wrap">
+          <svg class="donut-svg" width="90" height="90" viewBox="0 0 90 90" id="busyDonut">
+            <circle cx="45" cy="45" r="35" fill="none" stroke="#1a2540" stroke-width="14"/>
+          </svg>
+          <div class="donut-legend" id="busyLegend"></div>
+        </div>
+      </div>
+      <!-- Stars summary -->
+      <div class="chart-card">
+        <div class="chart-title">متوسطات التقييم ⭐</div>
+        <div class="stars-summary" id="starsSummary"></div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="ابحث بالاسم أو الهاتف أو التخصص..."
+          oninput="renderTable()">
+      </div>
+      <select class="filter-sel" id="filterLevel" onchange="renderTable()">
+        <option value="">كل المستويات</option>
+        <option>L1</option><option>L2</option><option>L3</option>
+        <option>M1</option><option>M2</option><option>دكتوراه</option>
+      </select>
+      <select class="filter-sel" id="filterMeet" onchange="renderTable()">
+        <option value="">كل أنواع الاجتماع</option>
+        <option value="حضوري">حضوري</option>
+        <option value="أونلاين">أونلاين</option>
+        <option value="هجين">هجين</option>
+      </select>
+      <button class="tool-btn tb-excel" onclick="exportExcel()">📥 تصدير Excel</button>
+      <button class="tool-btn tb-clear" onclick="confirmClear()">🗑️ حذف الكل</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <div class="table-header">
+        <h3>📋 جدول الردود</h3>
+        <div class="total-tag">يُظهر <span id="shownCount">0</span> من <span id="totalCount">0</span></div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th onclick="sortBy('name')">#  الاسم ↕</th>
+              <th onclick="sortBy('level')">المستوى ↕</th>
+              <th>التخصص</th>
+              <th onclick="sortBy('phone')">الهاتف ↕</th>
+              <th>الجدول</th>
+              <th>الانشغال</th>
+              <th>الاجتماع</th>
+              <th onclick="sortBy('star1')">⭐ تنظيم ↕</th>
+              <th>مقابلة HR</th>
+              <th>المجالات</th>
+              <th>تاريخ الرد</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS -->
+<div class="succ" id="succScr">
+  <div class="s-ring">✅</div>
+  <h2>تم الحفظ بنجاح!</h2>
+  <p>دخل ردك قاعدة بيانات النادي<br>يراه مسؤول HR مباشرة 🎓</p>
+  <div class="succ-btns">
+    <button class="sb sb-green" onclick="resetForm()">↩️ رد جديد</button>
+    <button class="sb sb-blue" onclick="goAdmin()">📊 لوحة الآدمن</button>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <h3 id="modalName">تفاصيل العضو</h3>
+    <div id="modalBody"></div>
+    <button class="modal-close" onclick="closeModal()">إغلاق</button>
+  </div>
+</div>
+
+<!-- CONFIRM CLEAR MODAL -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="confirm-modal">
+    <h3>⚠️ تأكيد الحذف</h3>
+    <p>سيتم حذف جميع الردود نهائياً.<br>هل أنت متأكد؟</p>
+    <div class="confirm-btns">
+      <button class="cb cb-cancel" onclick="closeConfirm()">إلغاء</button>
+      <button class="cb cb-confirm" onclick="clearAll()">حذف الكل</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════
+const ADMIN_PASS = 'karim.hr';
+const STORAGE_KEY = 'club_hr_responses';
+
+// ══════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════
+let isAuth = sessionStorage.getItem('hr_auth') === '1';
+
+function doLogin() {
+  const pw = document.getElementById('pwInput').value;
+  if (pw === ADMIN_PASS) {
+    isAuth = true;
+    sessionStorage.setItem('hr_auth', '1');
+    showApp();
+  } else {
+    document.getElementById('loginErr').classList.add('show');
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+  }
+}
+
+function logout() {
+  isAuth = false;
+  sessionStorage.removeItem('hr_auth');
+  document.getElementById('loginPage').classList.add('active');
+  document.getElementById('appPage').classList.remove('active');
+  document.getElementById('pwInput').value = '';
+  document.getElementById('loginErr').classList.remove('show');
+}
+
+function showApp() {
+  document.getElementById('loginPage').classList.remove('active');
+  document.getElementById('appPage').classList.add('active');
+  updateNavCount();
+}
+
+function goAdmin() {
+  document.getElementById('succScr').classList.remove('show');
+  switchTab('admin');
+}
+
+function goSurvey() {
+  // Go to survey without auth
+  document.getElementById('loginPage').classList.remove('active');
+  document.getElementById('appPage').classList.add('active');
+  switchTab('survey');
+}
+
+// On load
+window.addEventListener('load', () => {
+  buildDays();
+  if (isAuth) {
+    showApp();
+    switchTab('survey');
+  }
+});
+
+// ══════════════════════════════════════
+// TABS
+// ══════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('surveyTab').style.display = 'none';
+  document.getElementById('adminTab').style.display = 'none';
+
+  if (tab === 'survey') {
+    document.getElementById('surveyTab').style.display = 'block';
+    document.querySelectorAll('.nav-tab')[0].classList.add('active');
+  } else {
+    if (!isAuth) { showLoginForAdmin(); return; }
+    document.getElementById('adminTab').style.display = 'block';
+    document.querySelectorAll('.nav-tab')[1].classList.add('active');
+    renderAdmin();
+  }
+}
+
+function showLoginForAdmin() {
+  document.getElementById('loginPage').classList.add('active');
+  document.getElementById('appPage').classList.remove('active');
+}
+
+// ══════════════════════════════════════
+// SURVEY — DAYS
+// ══════════════════════════════════════
+const DAYS = [{id:'sat',n:'السبت'},{id:'sun',n:'الأحد'},{id:'mon',n:'الاثنين'},
+              {id:'tue',n:'الثلاثاء'},{id:'wed',n:'الأربعاء'},{id:'thu',n:'الخميس'}];
+const SLOTS = [{v:'صباح',c:'dot-m'},{v:'بعد الظهر',c:'dot-a'},{v:'مساء',c:'dot-e'}];
+
+function buildDays() {
+  const g = document.getElementById('dg');
+  DAYS.forEach(d => {
+    const b = document.createElement('div'); b.className = 'db';
+    b.innerHTML = `<div class="dt">
+        <input type="checkbox" class="dm" id="dm_${d.id}" onchange="pg()">
+        <label for="dm_${d.id}">${d.n}</label></div>
+      <div class="ds">${SLOTS.map(s=>`<label class="sl">
+        <input type="checkbox" name="${d.id}_s" value="${s.v}" onchange="pg()">
+        <span class="dot ${s.c}"></span>${s.v}</label>`).join('')}</div>`;
+    g.appendChild(b);
+  });
+}
+
+// ══════════════════════════════════════
+// SURVEY — STARS
+// ══════════════════════════════════════
+const SL = {1:'ضعيف 😕',2:'مقبول 😐',3:'جيد 🙂',4:'جيد جداً 😊',5:'ممتاز 🌟'};
+function sc(id, v) {
+  const el = document.getElementById(id);
+  el.textContent = SL[v]; el.classList.add('lit');
+}
+
+// ══════════════════════════════════════
+// SURVEY — PROGRESS
+// ══════════════════════════════════════
+function pg() {
+  const checks = [
+    document.getElementById('f_name').value.trim(),
+    document.getElementById('f_level').value,
+    document.getElementById('f_phone').value.trim(),
+    document.querySelectorAll('.dm:checked').length > 0,
+    document.querySelector('input[name="busy"]:checked'),
+    document.querySelector('input[name="meet"]:checked'),
+    document.querySelector('input[name="fh"]:checked'),
+    document.querySelector('input[name="s1"]:checked'),
+    document.querySelector('input[name="hrInterview"]:checked'),
+  ];
+  const p = Math.round(checks.filter(Boolean).length / checks.length * 100);
+  document.getElementById('bar').style.width = p + '%';
+  document.getElementById('pct').textContent = p;
+}
+
+// ══════════════════════════════════════
+// SURVEY — COLLECT & SUBMIT
+// ══════════════════════════════════════
+function collect() {
+  const sched = {};
+  DAYS.forEach(d => {
+    if (document.getElementById('dm_'+d.id)?.checked) {
+      const s = [...document.querySelectorAll(`input[name="${d.id}_s"]:checked`)].map(x=>x.value);
+      sched[d.n] = s.length ? s.join(' | ') : 'متاح';
+    }
+  });
+  return {
+    id         : Date.now(),
+    ts         : new Date().toLocaleString('ar-DZ'),
+    name       : document.getElementById('f_name').value.trim()||'—',
+    level      : document.getElementById('f_level').value||'—',
+    dept       : document.getElementById('f_dept').value||'—',
+    spec       : document.getElementById('f_spec').value.trim()||'—',
+    phone      : document.getElementById('f_phone').value.trim()||'—',
+    insta      : document.getElementById('f_insta').value.trim()||'—',
+    schedule   : Object.entries(sched).map(([d,s])=>`${d}: ${s}`).join('\n')||'لم يحدد',
+    busy       : document.querySelector('input[name="busy"]:checked')?.value||'—',
+    meet       : document.querySelector('input[name="meet"]:checked')?.value||'—',
+    duration   : document.querySelector('input[name="dur"]:checked')?.value||'—',
+    freeH      : document.querySelector('input[name="fh"]:checked')?.value||'—',
+    star1      : parseInt(document.querySelector('input[name="s1"]:checked')?.value||0),
+    star2      : parseInt(document.querySelector('input[name="s2"]:checked')?.value||0),
+    star3      : parseInt(document.querySelector('input[name="s3"]:checked')?.value||0),
+    notes      : document.getElementById('f_notes').value.trim()||'—',
+    suggestions: document.getElementById('f_sugg').value.trim()||'—',
+    hrInterview: document.querySelector('input[name="hrInterview"]:checked')?.value||'—',
+    fields     : [...document.querySelectorAll('input[name="field"]:checked')].map(x=>x.value).join(' | ')||'—',
+    fieldOther : document.getElementById('f_field_other').value.trim()||'—',
+  };
+}
+
+function doSubmit() {
+  const name  = document.getElementById('f_name').value.trim();
+  const phone = document.getElementById('f_phone').value.trim();
+  if (!name)  { showToast('⚠️ أدخل الاسم الكامل'); return; }
+  if (!phone) { showToast('⚠️ أدخل رقم الهاتف'); return; }
+
+  const btn = document.getElementById('subBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> جاري الحفظ...';
+
+  const data = collect();
+  const responses = getResponses();
+  responses.push(data);
+  saveResponses(responses);
+  updateNavCount();
+
+  setTimeout(() => {
+    document.getElementById('succScr').classList.add('show');
+    btn.disabled = false;
+    btn.innerHTML = '<span>✅</span> إرسال وحفظ الرد';
+  }, 600);
+}
+
+function resetForm() {
+  document.getElementById('succScr').classList.remove('show');
+  document.getElementById('dg').querySelectorAll('input').forEach(i=>i.checked=false);
+  document.querySelectorAll('#surveyTab input[type=text],#surveyTab input[type=tel],#surveyTab textarea')
+    .forEach(i=>i.value='');
+  document.querySelectorAll('#surveyTab select').forEach(s=>s.value='');
+  document.querySelectorAll('#surveyTab input[type=radio]').forEach(r=>r.checked=false);
+  ['c1','c2','c3'].forEach(id=>{
+    document.getElementById(id).textContent='انقر لتقييم';
+    document.getElementById(id).classList.remove('lit');
+  });
+  document.querySelectorAll('input[name="hrInterview"],input[name="field"]').forEach(i=>i.checked=false);
+  document.getElementById('f_field_other').value='';
+  pg();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ══════════════════════════════════════
+// STORAGE
+// ══════════════════════════════════════
+function getResponses() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); } catch{return [];}
+}
+function saveResponses(arr) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+}
+function updateNavCount() {
+  document.getElementById('navCount').textContent = getResponses().length;
+}
+
+// ══════════════════════════════════════
+// ADMIN — STATE
+// ══════════════════════════════════════
+let sortCol = 'ts', sortDir = 1;
+
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = 1; }
+  renderTable();
+}
+
+function renderAdmin() {
+  const data = getResponses();
+  renderStats(data);
+  renderCharts(data);
+  renderTable();
+}
+
+// ══════════════════════════════════════
+// ADMIN — STATS
+// ══════════════════════════════════════
+function renderStats(data) {
+  document.getElementById('st-total').textContent = data.length;
+
+  if (data.length) {
+    const avg = data.reduce((s,r)=>s+(r.star1+r.star2+r.star3)/3,0)/data.length;
+    document.getElementById('st-avg').textContent = avg.toFixed(1) + '⭐';
+
+    // Most available day
+    const dayCounts = {};
+    data.forEach(r => r.schedule.split('\n').forEach(line => {
+      const day = line.split(':')[0]?.trim();
+      if (day) dayCounts[day] = (dayCounts[day]||0) + 1;
+    }));
+    const topDay = Object.entries(dayCounts).sort((a,b)=>b[1]-a[1])[0];
+    document.getElementById('st-day').textContent = topDay ? topDay[0].slice(0,3) : '—';
+
+    // Most common level
+    const lvlCounts = {};
+    data.forEach(r=>{ lvlCounts[r.level]=(lvlCounts[r.level]||0)+1; });
+    const topLvl = Object.entries(lvlCounts).sort((a,b)=>b[1]-a[1])[0];
+    document.getElementById('st-level').textContent = topLvl?.[0] || '—';
+  } else {
+    document.getElementById('st-avg').textContent = '—';
+    document.getElementById('st-day').textContent = '—';
+    document.getElementById('st-level').textContent = '—';
+  }
+}
+
+// ══════════════════════════════════════
+// ADMIN — CHARTS
+// ══════════════════════════════════════
+const LEVEL_COLORS = {L1:'#3b82f6',L2:'#8b5cf6',L3:'#10b981',M1:'#f59e0b',M2:'#f43f5e','دكتوراه':'#06b6d4'};
+const BUSY_COLORS = ['#10b981','#3b82f6','#f59e0b','#f97316','#ef4444'];
+
+function renderCharts(data) {
+  // Levels bar chart
+  const lvls = ['L1','L2','L3','M1','M2','دكتوراه'];
+  const lvlCounts = {};
+  data.forEach(r=>{ lvlCounts[r.level]=(lvlCounts[r.level]||0)+1; });
+  const maxL = Math.max(1,...Object.values(lvlCounts));
+  document.getElementById('levelChart').innerHTML = lvls.map(l=>`
+    <div class="bar-item">
+      <div class="bar-label">${l}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${((lvlCounts[l]||0)/maxL*100)}%;background:${LEVEL_COLORS[l]||'var(--accent)'}"></div></div>
+      <div class="bar-count">${lvlCounts[l]||0}</div>
+    </div>`).join('');
+
+  // Busy donut
+  const busyLabels = ['😴 خفيف جداً','🙂 خفيف','😐 متوسط','😓 مرهق','🤯 مكثف جداً'];
+  const busyCounts = {}; busyLabels.forEach(b=>busyCounts[b]=0);
+  data.forEach(r=>{ if(busyCounts[r.busy]!==undefined) busyCounts[r.busy]++; });
+  const totalBusy = data.length || 1;
+  let offset = 0; const R = 35, C = 2*Math.PI*R;
+  const arcs = busyLabels.map((b,i)=>{
+    const pct = busyCounts[b]/totalBusy;
+    const dash = pct*C; const gap = C-dash;
+    const arc = `<circle cx="45" cy="45" r="${R}" fill="none" stroke="${BUSY_COLORS[i]}"
+      stroke-width="14" stroke-dasharray="${dash} ${gap}"
+      stroke-dashoffset="${-offset*C+C/4}" transform="rotate(-90 45 45)"/>`;
+    offset += pct; return arc;
+  });
+  document.getElementById('busyDonut').innerHTML =
+    `<circle cx="45" cy="45" r="35" fill="none" stroke="#1a2540" stroke-width="14"/>` + arcs.join('');
+  document.getElementById('busyLegend').innerHTML = busyLabels.map((b,i)=>
+    `<div class="dl-item"><div class="dl-dot" style="background:${BUSY_COLORS[i]}"></div>
+    <span>${b.slice(2)}</span><span class="dl-val">${busyCounts[b]}</span></div>`).join('');
+
+  // Stars summary
+  if (data.length) {
+    const avg = k => (data.reduce((s,r)=>s+r[k],0)/data.length).toFixed(1);
+    const starStr = v => '⭐'.repeat(Math.round(parseFloat(v)));
+    document.getElementById('starsSummary').innerHTML = [
+      {k:'star1',l:'تنظيم النادي'},{k:'star2',l:'الأنشطة'},{k:'star3',l:'التوصية'}
+    ].map(({k,l})=>`
+      <div class="ss-item">
+        <div class="ss-label">${l}</div>
+        <div class="ss-row">
+          <span class="ss-stars">${starStr(avg(k))}</span>
+          <span class="ss-val">${avg(k)}/5</span>
+        </div>
+      </div>`).join('');
+  } else {
+    document.getElementById('starsSummary').innerHTML = '<p style="color:var(--txt3);font-size:12px">لا توجد بيانات بعد</p>';
+  }
+}
+
+// ══════════════════════════════════════
+// ADMIN — TABLE
+// ══════════════════════════════════════
+function renderTable() {
+  let data = getResponses();
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const lf = document.getElementById('filterLevel').value;
+  const mf = document.getElementById('filterMeet').value;
+
+  if (q) data = data.filter(r=>
+    r.name.toLowerCase().includes(q) ||
+    r.phone.includes(q) ||
+    r.spec.toLowerCase().includes(q) ||
+    r.dept.toLowerCase().includes(q));
+  if (lf) data = data.filter(r=>r.level===lf);
+  if (mf) data = data.filter(r=>r.meet.includes(mf));
+
+  data.sort((a,b)=>{
+    const av = a[sortCol]||'', bv = b[sortCol]||'';
+    return typeof av==='number' ? (av-bv)*sortDir : String(av).localeCompare(String(bv),'ar')*sortDir;
+  });
+
+  document.getElementById('shownCount').textContent = data.length;
+  document.getElementById('totalCount').textContent = getResponses().length;
+
+  const tbody = document.getElementById('tBody');
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="12">
+      <div class="empty-state"><div class="es-ico">📭</div>
+      <p>لا توجد ردود مطابقة</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = data.map((r,i)=>`
+    <tr onclick="showDetail('${r.id}')" style="cursor:pointer">
+      <td><span class="td-name">${i+1}. ${r.name}</span></td>
+      <td><span class="td-level">${r.level}</span></td>
+      <td>${r.spec!=='—'?r.spec:r.dept}</td>
+      <td><span style="font-family:'JetBrains Mono',monospace;font-size:11px">${r.phone}</span></td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${r.schedule.replace(/\n/g,' • ')}</td>
+      <td>${r.busy}</td>
+      <td>${r.meet}</td>
+      <td class="td-stars">${'⭐'.repeat(r.star1||0)} <span style="font-size:10px;color:var(--txt3)">(${r.star1}/5)</span></td>
+      <td><span style="font-size:11px;color:${(r.hrInterview||'').includes('نعم')?'var(--green)':(r.hrInterview||'').includes('مجدولة')?'var(--gold)':'var(--txt3)'}">${r.hrInterview||'—'}</span></td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;font-size:11px">${r.fields||'—'}</td>
+      <td style="font-size:11px;color:var(--txt3)">${r.ts}</td>
+      <td onclick="event.stopPropagation()">
+        <button class="td-del" onclick="deleteRow(${r.id})">حذف</button>
+      </td>
+    </tr>`).join('');
+}
+
+// ══════════════════════════════════════
+// ADMIN — DETAIL MODAL
+// ══════════════════════════════════════
+function showDetail(id) {
+  const r = getResponses().find(x=>x.id==id);
+  if (!r) return;
+  document.getElementById('modalName').textContent = '👤 ' + r.name;
+  document.getElementById('modalBody').innerHTML = [
+    ['المستوى',r.level],['الكلية',r.dept],['التخصص',r.spec],
+    ['الهاتف',r.phone],['إنستغرام',r.insta],
+    ['الجدول',r.schedule.replace(/\n/g,'<br>')],
+    ['الانشغال',r.busy],['الاجتماع',r.meet],['المدة',r.duration],
+    ['الفراغ أسبوعياً',r.freeH],
+    ['⭐ تقييم التنظيم',`${'⭐'.repeat(r.star1||0)} (${r.star1}/5)`],
+    ['⭐ تقييم الأنشطة',`${'⭐'.repeat(r.star2||0)} (${r.star2}/5)`],
+    ['⭐ التوصية',`${'⭐'.repeat(r.star3||0)} (${r.star3}/5)`],
+    ['مقابلة HR',r.hrInterview||'—'],['المجالات',r.fields||'—'],['مجال آخر',r.fieldOther||'—'],
+    ['التزامات',r.notes],['اقتراحات',r.suggestions],
+    ['تاريخ الرد',r.ts],
+  ].map(([k,v])=>`<div class="detail-row"><div class="dr-key">${k}</div><div class="dr-val">${v}</div></div>`).join('');
+  document.getElementById('detailModal').classList.add('show');
+}
+function closeModal() { document.getElementById('detailModal').classList.remove('show'); }
+
+// ══════════════════════════════════════
+// ADMIN — DELETE / CLEAR
+// ══════════════════════════════════════
+function deleteRow(id) {
+  const arr = getResponses().filter(r=>r.id!=id);
+  saveResponses(arr);
+  updateNavCount();
+  renderAdmin();
+  showToast('🗑️ تم حذف الرد');
+}
+function confirmClear() { document.getElementById('confirmModal').classList.add('show'); }
+function closeConfirm() { document.getElementById('confirmModal').classList.remove('show'); }
+function clearAll() {
+  saveResponses([]);
+  updateNavCount();
+  renderAdmin();
+  closeConfirm();
+  showToast('🗑️ تم حذف جميع الردود');
+}
+
+// ══════════════════════════════════════
+// ADMIN — EXCEL EXPORT
+// ══════════════════════════════════════
+function exportExcel() {
+  const data = getResponses();
+  if (!data.length) { showToast('⚠️ لا توجد بيانات للتصدير'); return; }
+
+  const rows = [['#','الاسم','المستوى','الكلية','التخصص','الهاتف','إنستغرام',
+    'جدول الفراغ','الانشغال','الاجتماع','المدة','ساعات/أسبوع',
+    'تقييم التنظيم','تقييم الأنشطة','التوصية','مقابلة HR','المجالات','مجال آخر',
+    'التزامات','اقتراحات','تاريخ الرد']];
+
+  data.forEach((r,i)=>rows.push([
+    i+1,r.name,r.level,r.dept,r.spec,r.phone,r.insta,
+    r.schedule.replace(/\n/g,' | '),r.busy,r.meet,r.duration,r.freeH,
+    `${r.star1}/5`,`${r.star2}/5`,`${r.star3}/5`,r.hrInterview||'—',r.fields||'—',r.fieldOther||'—',
+    r.notes,r.suggestions,r.ts
+  ]));
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = rows[0].map((_,i)=>({wch: i===7||i===15||i===16?30:16}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'ردود النادي');
+  XLSX.writeFile(wb, `ردود_النادي_${new Date().toLocaleDateString('ar-DZ').replace(/\//g,'-')}.xlsx`);
+  showToast('📥 تم تصدير Excel بنجاح!');
+}
+
+// ══════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════
+function showToast(m) {
+  const t = document.getElementById('toast');
+  t.textContent = m; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
